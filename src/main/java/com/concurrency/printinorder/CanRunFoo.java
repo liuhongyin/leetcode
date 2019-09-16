@@ -1,9 +1,9 @@
 package com.concurrency.printinorder;
 
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Semaphore;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import java.util.concurrent.*;
 
 /**
  * originUrl:https://leetcode.com/problems/print-in-order/
@@ -31,7 +31,7 @@ class CanRunFoo {
     Runnable printFirst = new Runnable() {
         @Override
         public void run() {
-            System.out.println("first");
+            System.out.println("Thread:" + Thread.currentThread().getName() + ": first");
             semaphoreSecond.release();
         }
     };
@@ -43,7 +43,8 @@ class CanRunFoo {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            System.out.println("second");
+            System.out.println("Thread:" + Thread.currentThread().getName() + ": second");
+
             semaphoreThird.release();
         }
     };
@@ -55,14 +56,30 @@ class CanRunFoo {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            System.out.println("third");
+            System.out.println("Thread:" + Thread.currentThread().getName() + ": third");
+
         }
     };
 
     public static void main(String[] args) {
 
         CanRunFoo canRunFoo = new CanRunFoo();
-        ExecutorService executorService = Executors.newCachedThreadPool();
+
+//        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        //  Manually create thread pool
+        ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("print-in-order-%d").build();
+
+        ExecutorService executorService = new ThreadPoolExecutor(
+                0,
+                Integer.MAX_VALUE,
+                60L,
+                TimeUnit.MILLISECONDS,
+                new SynchronousQueue<>(),
+                namedThreadFactory,
+                new ThreadPoolExecutor.AbortPolicy());
+
         executorService.execute(canRunFoo.printSecond);
         executorService.execute(canRunFoo.printThird);
         executorService.execute(canRunFoo.printFirst);
